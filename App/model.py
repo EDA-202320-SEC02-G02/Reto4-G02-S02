@@ -145,7 +145,7 @@ def req_5(data_structs):
 
 def req_6(data_structs):
     """
-    Función que soluciona el requerimiento 6
+    Función que solucionsa el requerimiento 6
     """
     # TODO: Realizar el requerimiento 6
     pass
