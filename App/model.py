@@ -48,6 +48,8 @@ from DISClib.Algorithms.Sorting import mergesort as merg
 from DISClib.Algorithms.Sorting import quicksort as quk
 assert cf
 
+import math as mat
+
 """
 Se define la estructura de un catálogo de videos. El catálogo tendrá
 dos listas, una para los videos, otra para las categorias de los mismos.
@@ -62,20 +64,193 @@ def new_data_structs():
     manera vacía para posteriormente almacenar la información.
     """
     #TODO: Inicializar las estructuras de datos
-    pass
+    catalogo = {
+        "streets_graph": None,
+        "vertices_by_lat&long": None,
+        "streets_intersections_data": None,
+        "infractions_by_district": None,
+        "infractions_by_severity": None,
+        "infractions_by_type_service": None,
+        "infractions_by_code_ticket": None,
+        "mst": None
+    }
+
+    catalogo["streets_graph"] = gr.newGraph(datastructure='ADJ_LIST', directed=False)
+    
+    catalogo["streets_intersections_data"] = mp.newMap(maptype='CHAINING', loadfactor=0.5)
+    
+    catalogo["infractions_by_district"] = mp.newMap(maptype='CHAINING', loadfactor=0.5)
+    
+    catalogo["infractions_by_severity"] = mp.newMap(maptype='CHAINING', loadfactor=0.5)
+    
+    catalogo["infractions_by_type_service"] = mp.newMap(maptype='CHAINING', loadfactor=0.5)
+    
+    catalogo["infractions_by_code_ticket"] = mp.newMap(maptype='CHAINING', loadfactor=0.5)
+    
+    catalogo["vertices_by_lat&long"] = mp.newMap(maptype='CHAINING', loadfactor=0.5)
+
+    catalogo["mst"] = None
+
+    return catalogo
 
 
 # Funciones para agregar informacion al modelo
 
-def add_data(data_structs, data):
+def add_data_to_ind_set(data_structs, llave,dato):
     """
-    Función para agregar nuevos elementos a la lista
+    Función para agregar nuevos elementos a un mapa que contiene listas
     """
-    #TODO: Crear la función para agregar elementos a una lista
-    pass
+    if not mp.contains(data_structs, llave):
+        empty = set()
+        mp.put(data_structs, llave, empty)
 
+    lst = me.getValue(mp.get(data_structs, llave))
+    lst.add(dato)
+
+
+def add_data_to_ind_list(data_structs, llave,dato):
+    """
+    Función para agregar nuevos elementos a un mapa que contiene listas
+    """
+    if not mp.contains(data_structs, llave):
+        mp.put(data_structs, llave, lt.newList('ARRAY_LIST'))
+
+    lst = me.getValue(mp.get(data_structs, llave))
+    lt.addLast(lst, dato )
 
 # Funciones para creacion de datos
+def vertex(data_structs, vertice, latitud, longintud):
+    
+    
+    gr.insertVertex(data_structs["streets_graph"], vertex)
+
+    mp.put(data_structs["vertices_by_lat&long"], (latitud, longintud), vertice)
+
+
+    mp.put(data_structs["streets_intersections_data"], vertice, {
+        "intersection": {
+            "lat": latitud,
+            "long": longintud,
+        },
+        "police_stations": lt.newList("ARRAY_LIST"),
+        "infractions": lt.newList("ARRAY_LIST"),
+    })
+
+def estacionespolicia(data_structs, vertice, estacion ):
+    
+    
+    lista = me.getValue(mp.get(data_structs["streets_intersections_data"], vertice))["police_stations"]
+    lt.addLast(lista, estacion)
+
+def infracciones(data_structs, vertice, infraction  ):
+    mapa = data_structs["infractions_by_district"]
+    
+    entry = mp.get(data_structs["streets_intersections_data"], vertice)
+    
+    lista = me.getValue(entry)["infractions"]
+    
+
+    if not mp.contains(mapa, infraction["LOCALIDAD"]):
+        
+        mp.put(mapa, infraction["LOCALIDAD"], mp.newMap(maptype='CHAINING', loadfactor=0.5))
+
+
+    verticesmp = me.getValue(mp.get(mapa , infraction["LOCALIDAD" ] ))
+
+    if not mp.contains(verticesmp , vertex):
+        
+        
+        mp.put(verticesmp, vertice, 0)
+
+    numeroinfractions = me.getValue(mp.get(verticesmp, vertice))
+
+    mp.put(verticesmp, vertice,numeroinfractions + 1)
+    
+    
+    lt.addLast(lista, infraction)
+
+def edge(data_structs, verticeuno, verticedos):
+    verticeunodato = me.getValue(mp.get(data_structs["streets_intersections_data"], verticeuno))
+    
+    
+    verticedosdato = me.getValue(mp.get(data_structs["streets_intersections_data"], verticedos))
+    
+    latitud1 = verticeunodato["intersection"]["lat"]
+    latitud2 = verticedosdato["intersection"]["lat"]
+    longitud1 = verticeunodato["intersection"]["long"]
+    
+    longitud2 = verticedosdato["intersection"]["long"]
+
+    distancia = distanciaa(latitud1 , longitud1, latitud2, longitud2  )
+
+    gr.addEdge(data_structs["streets_graph"], verticeuno, verticedos, distancia )
+
+
+
+def primeroultimo(lt, filter_data=None, size=3):
+    """
+    Retorna los n primeros y últimos elemento de la lista
+    """
+    primero = []
+    ultimo = []
+
+    if lt.size(lt) < size * 2:
+        
+        for i in range(1, lt.size(lt) + 1):
+            
+            el = datafiltrado(lt.getElement(lt, i), filter_data)
+            
+            primero.append(el)
+            
+    else:
+        for i in range(1, size + 1):
+            
+            primeroo = datafiltrado(
+                
+                lt.getElement(lt, i), filter_data)
+            
+            primero.append(primeroo)
+            
+            ultimoo = datafiltrado(lt.getElement(
+                lt, lt.size(lt) - i + 1), filter_data)
+            
+            ultimo.insert(0, ultimoo)
+            
+
+    return primero + ultimo
+
+
+
+def datafiltrado(data , atributos):
+    """
+    Retorna un diccionario con los atributos de un dato
+    """
+    if not atributos:
+        return data
+
+
+
+    filtered_data = {}
+    
+    for llave in atributos:
+        
+        filtered_data[llave] = data[llave]
+    return filtered_data
+
+
+def distanciaa(latitud1, longitud1, latitud2, longitud2):
+    """
+    Retorna la distancia entre dos puntos en la tierra
+    """
+    latitud1 = mat.radians(latitud1)
+    latitud2 = mat.radians(latitud2)
+    
+    longitud1 = mat.radians(longitud1)
+    
+    longitud2 = mat.radians(longitud2)
+
+    return 2 * mat.asin(mat.sqrt(mat.sin((latitud2 - latitud1) / 2) ** 2 + mat.cos(latitud1) * mat.cos(latitud2) * mat.sin((longitud2 - longitud1) / 2) ** 2)) * 6371
+
 
 def new_data(id, info):
     """
@@ -103,36 +278,165 @@ def data_size(data_structs):
     pass
 
 
-def req_1(data_structs):
+
+
+def req_1(data_structs,latitud1,latitud2,longitud1,longitud2):
     """
     Función que soluciona el requerimiento 1
     """
     # TODO: Realizar el requerimiento 1
-    pass
+    
+    vertice1 = me.getValue(mp.get(data_structs["vertices_by_lat&long"], (latitud1, longitud1)))
+    
+    
+    vertice2 = me.getValue(mp.get(data_structs["vertices_by_lat&long"], (latitud2, longitud2)))
+   
+    busqueda = dfs.DepthFirstSearch(data_structs["streets_graph"], vertice1)
 
 
-def req_2(data_structs):
+
+    caminoo = dfs.pathTo(busqueda, vertice2)
+
+    if caminoo is None:
+        return None
+    
+    verticeslst = []
+
+    for verticee in lt.iterator(caminoo):
+        
+        
+        datav = me.getValue(mp.get(data_structs["streets_intersections_data"], verticee))
+        
+        verticeslst.append({
+            "intersection_id": verticee,
+            
+            "lat": datav["intersection"]["lat"],
+            
+            "long": datav["intersection"]["long"],
+            
+            "police_stations": len(datav["police_stations"]),
+            
+            "infractions": len(datav["infractions"]),
+            
+            
+        })
+
+    return verticeslst
+
+
+
+def req_2(data_structs,latitud1,latitud2,longitud1,longitud2):
     """
     Función que soluciona el requerimiento 2
     """
     # TODO: Realizar el requerimiento 2
-    pass
+    vertice1 = me.getValue(mp.get(data_structs["vertices_by_lat&long"], (latitud1, longitud1)))
+    
+    
+    vertice2 = me.getValue(mp.get(data_structs["vertices_by_lat&long"], (latitud2, longitud2)))
+    
+    busqueda = bfs.BreadhtFisrtSearch(data_structs["streets_graph"], vertice1)
+
+    caminoo = bfs.BreadhtFisrtSearch(busqueda, vertice2)
+
+    if caminoo is None:
+        return None
+    
+    
+    verticeslst = []
+
+    for verticee in lt.iterator(caminoo):
+        datav = me.getValue(mp.get(data_structs["streets_intersections_data"], verticee))
+        verticeslst.append({
+            
+            "intersection_id": verticee,
+            "lat": datav["intersection"]["lat"],
+            
+            "long": datav["intersection"]["long"],
+            
+            
+            "police_stations": len(datav["police_stations"]),
+            
+            "infractions": len(datav["infractions"]),
+        })
 
 
-def req_3(data_structs):
+
+def req_3(data_structs,  cams,  lugar):
     """
     Función que soluciona el requerimiento 3
     """
     # TODO: Realizar el requerimiento 3
-    pass
+    verticeslugar = me.getValue(mp.get(data_structs["infractions_by_district"], lugar  ) ) 
+    
+    lugarvertices = mp.keySet(verticeslugar)
+    
+    
+    verticeslist = lt.newList("ARRAY_LIST")
+    
+    for verticee in lt.iterator(lugarvertices):
+        
+        
+        lt.addLast(verticeslist, (verticee, me.getValue(mp.get(verticeslugar, verticee))))
+
+    verticeslist = sort(verticeslist , composed_sort([comparavertices]))
+    
+    
+    print("Los Vertices:", lt.subList(verticeslist, 1, cams))
+    
 
 
-def req_4(data_structs):
+
+def req_4(data_structs,cams):
     """
     Función que soluciona el requerimiento 4
     """
     # TODO: Realizar el requerimiento 4
-    pass
+    tipo = data_structs['model']["infractions_by_type_service"]
+    
+    
+    cod = data_structs['model']["infractions_by_code_ticket"]
+    
+    
+    entry = mp.get(tipo, "Diplomatico")
+    
+    
+    valoresentry = me.getValue(entry)
+    
+    orden= sorted(valoresentry, reverse=True)
+    cams =10
+    severoo = lt.newList('ARRAY_LIST')
+    
+    
+    while (cams > 0):
+        for cada in orden:
+            
+            
+            if (cams == 0):
+                break
+            
+            
+                #cams=7
+            codentry = mp.get(cod, cada)
+            
+            codvalues = me.getValue(codentry )
+            
+            for cadaa in lt.iterator(codvalues):
+                
+                
+                if ( not lt.isPresent( severoo ,cadaa )):
+                    
+                    
+                    lt.addLast(severoo, cadaa )
+                    cams -= 1
+                    
+                if (cams == 0):
+                    break
+             
+             
+             
+    print( "Nodos severos/graves: ", severoo )
+
 
 
 def req_5(data_structs):
@@ -192,10 +496,49 @@ def sort_criteria(data_1, data_2):
     #TODO: Crear función comparadora para ordenar
     pass
 
+def composed_sort(cmp_list):
+    
+    def cmp(data1, data2):
+        for cmp_function in cmp_list:
+            result = cmp_function(data1, data2)
+            if result != 0:
+                return result > 0
+        return False
+    return cmp
 
-def sort(data_structs):
+def comparavertices(v1, v2):
+    
+    
+    if v1[1] == v2[1]:
+        
+        return 0
+    
+    elif v1[1] > v2[1]:
+        
+        
+        return 1
+    
+    else:
+        return -1
+
+
+def sort(data_structs, criteria):
     """
     Función encargada de ordenar la lista con los datos
     """
     #TODO: Crear función de ordenamiento
-    pass
+    
+    return merg.sort(data_structs, criteria)
+
+
+def mst(data_structs):
+    """
+    Función que retorna el arbol de expansión mínima del grafo
+    """
+    
+    
+    if data_structs["mst"] is None:
+        
+        
+        data_structs["mst"] = prim.PrimMST(data_structs["streets_graph"] )
+    return data_structs ["mst"] 

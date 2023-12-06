@@ -36,17 +36,72 @@ def new_controller():
     Crea una instancia del modelo
     """
     #TODO: Llamar la función del modelo que crea las estructuras de datos
-    pass
+    control = {
+        'model': None
+    }
+    control['model'] = model.new_data_structs()
+    return control
+
 
 
 # Funciones para la carga de datos
 
-def load_data(control, filename):
+def load_data(control):
     """
     Carga los datos del reto
     """
     # TODO: Realizar la carga de datos
-    pass
+    catalog = control['model']
+    
+    
+    bogota_vertices = cf.data_dir + 'bogota_vertices.txt'
+    
+    bogota_edges = cf.data_dir + 'bogota_arcos.txt'
+    
+    infraction_file = cf.data_dir + 'comparendos_2019_bogota_vertices.csv'
+    
+    police_station_file = cf.data_dir + 'estacionpolicia_bogota_vertices.csv'
+
+    with open(bogota_vertices, mode='r') as verts:
+        
+        line = verts.readline()
+        
+        while line:
+            
+            vert, long, lat = line.split(',')
+            
+            model.vertex(catalog, int(vert), float(lat), float(long))
+            line = verts.readline()
+
+    infractions_input = csv.DictReader(open(infraction_file, encoding='utf-8'))
+    
+    police_stations_input = csv.DictReader(open(police_station_file, encoding='utf-8'))
+    
+    for infraccion in infractions_input:
+        
+        model.add_infraction(catalog, int(infraccion['VERTICES']), infraccion)
+        
+        model.add_data_to_ind_set(catalog["infractions_by_type_service"], infraccion["TIPO_SERVICIO"], infraccion["INFRACCION"])
+        
+        model.add_data_to_ind_list(catalog["infractions_by_code_ticket"], infraccion["INFRACCION"], infraccion["VERTICES"])
+
+    for estacion in police_stations_input:
+        
+        
+        
+        
+        model.add_police_station(catalog, int(estacion['VERTICES']), estacion)
+
+    with open(bogota_edges, mode='r') as verts:
+        line = verts.readline()
+        while line:
+            line_info = line.split()
+            for each_node in range(1, len(line_info)):
+                
+                model.add_edge(catalog, int(line_info[0]), int(line_info[each_node]))
+                
+            line = verts.readline()
+
 
 
 # Funciones de ordenamiento
@@ -69,36 +124,44 @@ def get_data(control, id):
     pass
 
 
-def req_1(control):
+def req_1(control,latitud1, longitud1, latitud2, longitud2):
     """
     Retorna el resultado del requerimiento 1
     """
     # TODO: Modificar el requerimiento 1
-    pass
+    
+    
+    return model.req_1(control['model'], latitud1, longitud1, latitud2, longitud2)
 
 
-def req_2(control):
+
+
+def req_2(control,latitud1, longitud1, latitud2, longitud2):
     """
     Retorna el resultado del requerimiento 2
     """
     # TODO: Modificar el requerimiento 2
-    pass
+    model.req_2(control['model'], latitud1, longitud1, latitud2, longitud2)
 
 
-def req_3(control):
+
+def req_3(control,cams,lugar):
     """
     Retorna el resultado del requerimiento 3
     """
     # TODO: Modificar el requerimiento 3
-    pass
+    lugar="CHAPINERO"
+    
+    cams=15
+    model.req_3(control['model'], cams, lugar)
 
 
-def req_4(control):
+def req_4(control,cams):
     """
     Retorna el resultado del requerimiento 4
     """
     # TODO: Modificar el requerimiento 4
-    pass
+    model.req_4(control, cams)
 
 
 def req_5(control):

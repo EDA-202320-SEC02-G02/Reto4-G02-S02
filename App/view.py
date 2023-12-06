@@ -45,7 +45,8 @@ def new_controller():
         Se crea una instancia del controlador
     """
     #TODO: Llamar la función del controlador donde se crean las estructuras de datos
-    pass
+    return controller.new_controller()
+
 
 
 def print_menu():
@@ -61,13 +62,53 @@ def print_menu():
     print("9- Ejecutar Requerimiento 8")
     print("0- Salir")
 
+def tabulate_data(elements, headers='', len=0, col=[]):
+    """
+    Dependiendo si es lista o diccionario la función 
+    llamará a los métodos de tabulate para imprimir elements 
+    """
+
+    columnass = []
+    
+    
+    if len > 0:
+        columnas = [8 for _ in range(len)]
+    if col:
+        columnas = col
+        
+        
+    if type(elements) is list:
+        
+        print(tabulate(elements, headers=(headers or 'keys'),
+                       
+              tablefmt='grid', maxcolwidths=columnas or None))
+        
+    if type(elements) is dict:
+        print(tabulate([[i, j] for i, j in elements.items()], headers=(
+            headers or elements.keys()), tablefmt="grid", maxcolwidths=columnas or None))
+
+def printSubTable(dct):
+    
+    return tabulate([dct.keys(), dct.values()], tablefmt='grid')
+
+
+def getSubTabulates(elems):
+    
+    respuesta = ""
+    for elemento in elems:
+        
+        
+        respuesta += printSubTable(elemento) + "\n"
+        
+    return respuesta
+
 
 def load_data(control):
     """
     Carga los datos
     """
     #TODO: Realizar la carga de datos
-    pass
+    controller.load_data(control)
 
 
 def print_data(control, id):
@@ -82,7 +123,26 @@ def print_req_1(control):
         Función que imprime la solución del Requerimiento 1 en consola
     """
     # TODO: Imprimir el resultado del requerimiento 1
-    pass
+    latitud1 = float(input("Digite la latitud del vértice (origen): "))
+    
+    latitud2 = float(input("Ingrese la latitud del vértice (destino): "))
+    
+    
+    longitud1 = float(input("Ingrese la longitud del vertice (origen): "))
+           
+    
+    
+    longitud2 = float(input("Ingrese la longitud del vertice (destino): "))
+
+
+    vertices = controller.req_1(control, latitud1, longitud1, latitud2, longitud2)
+    if vertices is None:
+        
+        print("No hay ruta")
+        return
+
+    tabulate_data(vertices[::-1])
+
 
 
 def print_req_2(control):
@@ -90,7 +150,25 @@ def print_req_2(control):
         Función que imprime la solución del Requerimiento 2 en consola
     """
     # TODO: Imprimir el resultado del requerimiento 2
-    pass
+    latitud1 = float(input("Digite la latitud del vértice (origen): "))
+    
+    latitud2 = float(input("Ingrese la latitud del vértice (destino): "))
+    
+    
+    longitud1 = float(input("Ingrese la longitud del vertice (origen): "))
+           
+    
+    
+    longitud2 = float(input("Ingrese la longitud del vertice (destino): "))
+
+
+    vertices = controller.req_2(control, latitud1, longitud1, latitud2, longitud2)
+    if vertices is None:
+        
+        print("No hay ruta")
+        return
+
+    tabulate_data(vertices[::-1])
 
 
 def print_req_3(control):
@@ -98,7 +176,7 @@ def print_req_3(control):
         Función que imprime la solución del Requerimiento 3 en consola
     """
     # TODO: Imprimir el resultado del requerimiento 3
-    pass
+    controller.req_3(control)
 
 
 def print_req_4(control):
@@ -106,7 +184,7 @@ def print_req_4(control):
         Función que imprime la solución del Requerimiento 4 en consola
     """
     # TODO: Imprimir el resultado del requerimiento 4
-    pass
+    controller.req_4(control, 23)
 
 
 def print_req_5(control):
